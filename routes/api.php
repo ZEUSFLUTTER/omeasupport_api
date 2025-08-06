@@ -25,6 +25,8 @@ Route::middleware('auth:sanctum')->prefix('auth')->group(function () {
     Route::put('/edit-profile', [AuthController::class, 'edit']);
     Route::post('/change-password', [AuthController::class, 'updatePassword']);
     Route::delete('/logout', [AuthController::class, 'logout']);
+    Route::put('/update-profile-image', [AuthController::class, 'updateProfileImage']);
+    Route::delete('/remove-profile-image', [AuthController::class, 'removeProfileImage']);
 });
 
 // 🎫 Routes liées aux TICKETS (protégées par Sanctum)
