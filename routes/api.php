@@ -27,7 +27,7 @@ Route::middleware('auth:sanctum')->prefix('auth')->group(function () {
     Route::delete('/logout', [AuthController::class, 'logout']);
 });
 
-// 🎫 Routes liées aux TICKETS (protégées par Sanctum)
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tickets', [TicketController::class, 'store']);
     Route::get('/tickets', [TicketController::class, 'index']);
@@ -37,7 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tickets/{id}/payment', [TicketController::class, 'paymentLink']);
 
 
-    // partie technicien
+
 
     Route::get('/read', [TechnicianController::class, 'read']);
     Route::post('/tickets/{id}/postuler', [TechnicianController::class, 'postulerTicket']);

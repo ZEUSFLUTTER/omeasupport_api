@@ -44,15 +44,13 @@ class AuthController extends Controller
             // Générer le token Sanctum
             $token = $user->createToken('auth_user')->plainTextToken;
 
-            // Retourner la réponse avec le token et les informations de base
-            // L'objet user complet sera récupéré via l'endpoint /api/auth/profile
             return response()->json([
                 "status" => true,
                 "message" => "Utilisateur connecté avec succès",
                 "data" => [
                     "token" => $token,
                     "token_type" => "Bearer",
-                    "role" => $user->role, // Renvoi du rôle pour une vérification rapide côté client
+                    "role" => $user->role, 
                 ],
             ]);
         } catch (\Throwable $th) {
@@ -130,8 +128,6 @@ class AuthController extends Controller
         }
     }
 
-    // 👤 Profil utilisateur connecté
-    // Cet endpoint est appelé par Flutter pour récupérer les détails complets de l'utilisateur
     public function profile(Request $request)
     {
         $user = $request->user(); // Récupère l'utilisateur authentifié via le token

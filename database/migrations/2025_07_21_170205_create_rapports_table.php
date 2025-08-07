@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->float('prix');
             $table->enum('statut', ['termine', 'suspendu'])->default('termine');
             $table->date('date_intervention')->nullable();
-            $table->text('rapport')->nullable(); // ← ajouté si besoin
+            $table->text('rapport')->nullable(); 
             $table->timestamps();
         });
     }
