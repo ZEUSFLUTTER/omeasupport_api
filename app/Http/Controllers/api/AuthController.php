@@ -186,7 +186,7 @@ class AuthController extends Controller
 
             // Recharger l'utilisateur pour inclure les dernières modifications et l'URL de la photo
             $user->refresh();
-             if ($user->photo_profile) {
+            if ($user->photo_profile) {
                 $user->photo_profile_url = Storage::url($user->photo_profile);
             } else {
                 $user->photo_profile_url = null;
@@ -255,5 +255,132 @@ class AuthController extends Controller
             "status" => true,
             "message" => "Déconnexion réussie",
         ]);
+    }
+
+    /**
+     * Met à jour la photo de profil de l'utilisateur connecté
+     */
+    public function updateProfileImage(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'photo_profile' => 'required|string', // Base64 string
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "Erreur de validation",
+                    "errors" => $validator->errors(),
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            // Décoder l'image base64
+            $imageData = base64_decode($request->photo_profile);
+
+            // Valider que c'est bien une image
+            $imageInfo = getimagesizefromstring($imageData);
+            if (!$imageInfo) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "Le fichier fourni n'est pas une image valide.",
+                ], 422);
+            }
+
+            // Vérifier le type MIME
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+            if (!in_array($imageInfo['mime'], $allowedMimes)) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "Type d'image non supporté. Utilisez JPG, PNG ou GIF.",
+                ], 422);
+            }
+
+            // Vérifier la taille (max 2MB en base64)
+            if (strlen($request->photo_profile) > 2 * 1024 * 1024 * 4 / 3) { // 4/3 pour la conversion base64
+                return response()->json([
+                    "status" => false,
+                    "message" => "L'image est trop volumineuse. Taille maximum: 2MB.",
+                ], 422);
+            }
+
+            // Supprimer l'ancienne photo si elle existe
+            if ($user->photo_profile) {
+                Storage::disk('public')->delete($user->photo_profile);
+            }
+
+            // Générer un nom de fichier unique
+            $extension = match ($imageInfo['mime']) {
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/gif' => 'gif',
+                default => 'jpg'
+            };
+
+            $filename = 'profile_photos/' . uniqid('profile_', true) . '.' . $extension;
+
+            // Sauvegarder l'image
+            Storage::disk('public')->put($filename, $imageData);
+
+            // Mettre à jour l'utilisateur
+            $user->update(['photo_profile' => $filename]);
+
+            // Recharger l'utilisateur avec l'URL complète
+            $user->refresh();
+            $photoProfileUrl = $user->photo_profile ? Storage::url($user->photo_profile) : null;
+
+            return response()->json([
+                "status" => true,
+                "message" => "Photo de profil mise à jour avec succès",
+                "data" => [
+                    "photo_profile_url" => $photoProfileUrl,
+                ],
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                "status" => false,
+                "message" => "Erreur lors de la mise à jour de la photo de profil",
+                "error" => $th->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Supprime la photo de profil de l'utilisateur connecté
+     */
+    public function removeProfileImage(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user->photo_profile) {
+                return response()->json([
+                    "status" => false,
+                    "message" => "Aucune photo de profil à supprimer.",
+                ], 400);
+            }
+
+            // Supprimer le fichier physique
+            Storage::disk('public')->delete($user->photo_profile);
+
+            // Mettre à jour l'utilisateur
+            $user->update(['photo_profile' => null]);
+
+            return response()->json([
+                "status" => true,
+                "message" => "Photo de profil supprimée avec succès",
+                "data" => [
+                    "photo_profile_url" => null,
+                ],
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                "status" => false,
+                "message" => "Erreur lors de la suppression de la photo de profil",
+                "error" => $th->getMessage(),
+            ], 500);
+        }
     }
 }
