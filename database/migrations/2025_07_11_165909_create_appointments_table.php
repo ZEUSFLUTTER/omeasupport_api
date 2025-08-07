@@ -10,12 +10,12 @@ return new class extends Migration
     {
         Schema::create('appointments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ticket_id')->nullable()->constrained('tickets')->onDelete('cascade'); // facultatif mais utile
+            $table->foreignId('ticket_id')->nullable()->constrained('tickets')->onDelete('cascade');
             $table->foreignId('client_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('technician_id')->constrained('users')->onDelete('cascade');
             $table->timestamp('date_time');
             $table->boolean('confirmed')->default(false);
-            $table->timestamps(); // important pour suivi
+            $table->timestamps(); 
         });
     }
 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->enum('method', ['stripe', 'paypal']);
             $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
             $table->text('payment_link')->nullable();
-            $table->timestamps(); // created_at + updated_at
+            $table->timestamps(); 
         });
     }
 

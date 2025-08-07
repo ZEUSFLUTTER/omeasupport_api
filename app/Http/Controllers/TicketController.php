@@ -7,6 +7,7 @@ use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Exception;
+use Illuminate\Support\Facades\Storage; // Added for file storage
 
 class TicketController extends Controller
 {
@@ -19,16 +20,32 @@ class TicketController extends Controller
                 'adresse' => 'required|string|max:255',
                 'photos' => 'nullable|array',
                 'photos.*' => 'string',
-                'date_rdv' => 'required|date',
+                'date_rdv' => 'required|date_format:Y-m-d H:i:s',
             ]);
+
+            $photoPaths = [];
+            if (isset($validated['photos']) && is_array($validated['photos'])) {
+                foreach ($validated['photos'] as $base64Photo) {
+                    // Remove prefix if present before decoding
+                    $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $base64Photo));
+
+                    // Generate a unique file name and path
+                    // Ensure the 'tickets' directory exists in storage/app/public
+                    $fileName = 'tickets/' . uniqid() . '.png';
+
+                    // Store the file
+                    Storage::disk('public')->put($fileName, $imageData);
+                    $photoPaths[] = Storage::url($fileName); // Get public URL for client
+                }
+            }
 
             $ticket = Ticket::create([
                 'user_id' => auth()->id(),
                 'type_probleme' => $validated['type_probleme'],
                 'description' => $validated['description'],
                 'adresse' => $validated['adresse'],
-                'photos' => $validated['photos'] ?? [],
-                'date_rdv' => $validated['date_rdv'],
+                'photos' => json_encode($photoPaths), // Store paths as JSON string
+                'date_rdv' => $validated['date_rdv'], // Laravel's model casting (if setup) handles this
                 'statut' => 'pending',
             ]);
 
@@ -140,7 +157,8 @@ class TicketController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'date_rdv' => 'required|date|after:now',
+                // MODIFICATION ICI: Adapter le format de validation pour date_rdv
+                'date_rdv' => 'required|date_format:Y-m-d\TH:i:s.u\Z|after:now',
             ]);
 
             if ($validator->fails()) {

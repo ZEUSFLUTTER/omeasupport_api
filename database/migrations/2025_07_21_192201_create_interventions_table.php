@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('ticket_id')->constrained()->onDelete('cascade');
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
-            $table->foreignId('technician_id')->constrained('users')->onDelete('cascade'); // si techniciens sont des users
+            $table->foreignId('technician_id')->constrained('users')->onDelete('cascade'); 
             $table->time('heure_debut')->nullable();
             $table->time('heure_fin')->nullable();
             $table->time('duree')->nullable();
