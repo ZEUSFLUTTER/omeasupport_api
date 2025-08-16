@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Api\AuthController;
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Candidature;
 use App\Models\Ticket;
 use App\Models\Intervention; // Assurez-vous d'importer Intervention
 use Illuminate\Support\Facades\Validator;
@@ -108,6 +111,38 @@ class TechnicianController extends Controller
     }
 
     // ... vos autres méthodes
+
+    public function postulerTicket($id)
+    {
+        // Récupérer l'utilisateur connecté (le technicien)
+        $technicianId = auth()->user()->id;
+
+        // Vérifier si le ticket existe
+        $ticket = Ticket::find($id);
+        if (!$ticket) {
+            return response()->json(['message' => 'Ticket introuvable'], 404);
+        }
+
+        // Vérifier si le technicien a déjà postulé à ce ticket
+        $existe = Candidature::where('ticket_id', $id)
+            ->where('technician_id', $technicianId)
+            ->first();
+
+        if ($existe) {
+            return response()->json(['message' => 'Vous avez déjà postulé à ce ticket'], 400);
+        }
+
+        // Enregistrer la candidature
+        $candidature = Candidature::create([
+            'ticket_id'      => $id,
+            'technician_id'  => $technicianId,
+        ]);
+
+        return response()->json([
+            'message' => 'Vous avez postulé à ce ticket avec succès',
+            'candidature' => $candidature
+        ], 201);
+    }
 
     public function startIntervention($ticketId)
     {
